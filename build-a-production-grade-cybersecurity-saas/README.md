@@ -39,6 +39,7 @@ cyber-risk-radar/
 - Breach monitoring: breach feed integration point with exposed-email findings.
 - Risk engine: weighted score across SSL, DNS/domain, email, headers, ports, and breaches.
 - Risk improvement simulator: models selected remediations, before/after score, percentage lift, and fix impact.
+- Business impact estimator: translates technical findings into exploitation likelihood, operational impact, and financial impact ranges.
 - Recommendation engine: remediation guidance for each failing or warning finding.
 - Reports: downloadable PDF with summary, findings, risk score, and recommendations.
 - Authentication: JWT login, role guard dependencies, admin-only route.

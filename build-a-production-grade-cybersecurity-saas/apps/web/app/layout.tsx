@@ -1,7 +1,18 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Link from "next/link";
-import { Activity, FileText, Gauge, LogIn, Network, Radar, ShieldCheck, SlidersHorizontal, Users } from "lucide-react";
+import {
+  Activity,
+  BriefcaseBusiness,
+  FileText,
+  Gauge,
+  LogIn,
+  Network,
+  Radar,
+  ShieldCheck,
+  SlidersHorizontal,
+  Users
+} from "lucide-react";
 
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -18,6 +29,7 @@ const nav = [
   { href: "/dashboard", label: "Dashboard", icon: Gauge },
   { href: "/domains", label: "Domains", icon: ShieldCheck },
   { href: "/simulator", label: "Simulator", icon: SlidersHorizontal },
+  { href: "/impact", label: "Business Impact", icon: BriefcaseBusiness },
   { href: "/assets", label: "Assets", icon: Network },
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/admin", label: "Admin", icon: Users },

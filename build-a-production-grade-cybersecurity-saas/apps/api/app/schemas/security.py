@@ -79,3 +79,23 @@ class RiskSimulationResponse(BaseModel):
     selected_finding_keys: list[str]
     top_fixes: list[RiskSimulationFixImpact]
     comparison: list[dict]
+
+
+class BusinessImpactRequest(BaseModel):
+    domain: str | None = None
+    findings: list[Finding]
+
+
+class BusinessImpactEstimate(BaseModel):
+    finding_key: str
+    finding_title: str
+    technical_risk: str
+    likelihood_of_exploitation: str
+    business_impact: list[str]
+    financial_impact_range: str
+    operational_impact: str
+
+
+class BusinessImpactResponse(BaseModel):
+    domain: str | None = None
+    estimates: list[BusinessImpactEstimate]

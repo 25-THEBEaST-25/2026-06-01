@@ -51,3 +51,18 @@ export type RiskSimulationResponse = {
   top_fixes: RiskSimulationFixImpact[];
   comparison: Array<{ label: string; score: number }>;
 };
+
+export type BusinessImpactEstimate = {
+  finding_key: string;
+  finding_title: string;
+  technical_risk: string;
+  likelihood_of_exploitation: string;
+  business_impact: string[];
+  financial_impact_range: string;
+  operational_impact: string;
+};
+
+export type BusinessImpactResponse = {
+  domain: string | null;
+  estimates: BusinessImpactEstimate[];
+};

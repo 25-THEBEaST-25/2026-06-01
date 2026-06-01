@@ -1,4 +1,10 @@
-import type { DashboardResponse, Finding, RiskSimulationResponse, ScanResponse } from "@/lib/types";
+import type {
+  BusinessImpactResponse,
+  DashboardResponse,
+  Finding,
+  RiskSimulationResponse,
+  ScanResponse
+} from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 const DEMO_TOKEN = process.env.NEXT_PUBLIC_DEMO_TOKEN ?? "";
@@ -62,6 +68,19 @@ export async function simulateRiskImprovement(
       findings,
       selected_finding_keys: selectedFindingKeys
     })
+  });
+}
+
+export async function estimateBusinessImpact(
+  domain: string,
+  findings: Finding[]
+): Promise<BusinessImpactResponse> {
+  if (!authToken()) {
+    return demoBusinessImpact(domain, findings);
+  }
+  return request<BusinessImpactResponse>("/business-impact/estimate", {
+    method: "POST",
+    body: JSON.stringify({ domain, findings })
   });
 }
 
@@ -172,4 +191,62 @@ function demoFixLabel(key: string) {
     content_security_policy: "Add Content-Security-Policy"
   };
   return labels[key] ?? `Fix ${key.replaceAll("_", " ")}`;
+}
+
+function demoBusinessImpact(domain: string, findings: Finding[]): BusinessImpactResponse {
+  const profiles: Record<
+    string,
+    Omit<BusinessImpactResponse["estimates"][number], "finding_key" | "technical_risk">
+  > = {
+    ssl_certificate: {
+      finding_title: "Expired SSL Certificate",
+      likelihood_of_exploitation: "Medium",
+      business_impact: ["Customers may lose trust.", "Potential website downtime."],
+      financial_impact_range: "₹10,000 - ₹50,000",
+      operational_impact: "Emergency certificate replacement and customer support follow-up."
+    },
+    dmarc: {
+      finding_title: "DMARC Not Enforced",
+      likelihood_of_exploitation: "High",
+      business_impact: ["Attackers can impersonate the brand.", "Payment or credential phishing risk increases."],
+      financial_impact_range: "₹50,000 - ₹5,00,000",
+      operational_impact: "Mail policy rollout, investigation, and customer communications."
+    },
+    open_ports: {
+      finding_title: "Unnecessary Public Port Exposure",
+      likelihood_of_exploitation: "High",
+      business_impact: ["Exposed services can become intrusion paths.", "Attackers can fingerprint public systems."],
+      financial_impact_range: "₹1,00,000 - ₹10,00,000",
+      operational_impact: "Firewall changes, owner review, and monitoring updates."
+    },
+    content_security_policy: {
+      finding_title: "Missing Content-Security-Policy",
+      likelihood_of_exploitation: "Medium",
+      business_impact: ["Script injection can expose sessions or form data.", "Forensic review may be required."],
+      financial_impact_range: "₹75,000 - ₹7,50,000",
+      operational_impact: "Report-only tuning and third-party script review."
+    }
+  };
+
+  return {
+    domain,
+    estimates: findings.map((finding) => {
+      const profile = profiles[finding.key] ?? {
+        finding_title: "Security Finding",
+        likelihood_of_exploitation: finding.severity === "high" ? "High" : "Medium",
+        business_impact: ["The finding may increase exposure to security incidents."],
+        financial_impact_range: "₹10,000 - ₹1,00,000",
+        operational_impact: "Owner assignment, remediation, and follow-up scanning."
+      };
+      return {
+        finding_key: finding.key,
+        technical_risk: titleCase(finding.severity),
+        ...profile
+      };
+    })
+  };
+}
+
+function titleCase(value: string) {
+  return `${value.slice(0, 1).toUpperCase()}${value.slice(1)}`;
 }

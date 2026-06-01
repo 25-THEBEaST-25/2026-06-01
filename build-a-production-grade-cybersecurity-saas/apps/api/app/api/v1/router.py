@@ -5,6 +5,8 @@ from jose import JWTError, jwt
 from app.core.config import settings
 from app.core.security import create_access_token, hash_password, verify_password
 from app.schemas.security import (
+    BusinessImpactRequest,
+    BusinessImpactResponse,
     DashboardResponse,
     DomainScanRequest,
     LoginRequest,
@@ -13,6 +15,7 @@ from app.schemas.security import (
     ScanResponse,
     TokenResponse,
 )
+from app.services.business_impact import BusinessImpactEstimator
 from app.services.orchestrator import ScanOrchestrator
 from app.services.reporting import ReportService
 from app.services.risk_simulator import RiskImprovementSimulator
@@ -32,6 +35,7 @@ DEMO_USERS = {
 orchestrator = ScanOrchestrator()
 report_service = ReportService()
 risk_simulator = RiskImprovementSimulator()
+business_impact_estimator = BusinessImpactEstimator()
 
 
 def require_role(*roles: str):
@@ -108,6 +112,18 @@ async def simulate_risk_improvement(
         selected_finding_keys=payload.selected_finding_keys,
         current_score=payload.current_score,
     )
+
+
+@api_router.post(
+    "/business-impact/estimate",
+    response_model=BusinessImpactResponse,
+    tags=["business-impact"],
+)
+async def estimate_business_impact(
+    payload: BusinessImpactRequest,
+    _: dict = Depends(require_role("admin", "analyst", "viewer")),
+) -> BusinessImpactResponse:
+    return business_impact_estimator.estimate(payload)
 
 
 @api_router.post("/reports/domain", tags=["reports"])
