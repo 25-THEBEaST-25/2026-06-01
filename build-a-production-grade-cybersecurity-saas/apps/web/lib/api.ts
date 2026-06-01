@@ -1,4 +1,4 @@
-import type { DashboardResponse, ScanResponse } from "@/lib/types";
+import type { DashboardResponse, Finding, RiskSimulationResponse, ScanResponse } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 const DEMO_TOKEN = process.env.NEXT_PUBLIC_DEMO_TOKEN ?? "";
@@ -44,6 +44,24 @@ export async function scanDomain(domain: string): Promise<ScanResponse> {
   return request<ScanResponse>("/scans/domain", {
     method: "POST",
     body: JSON.stringify({ domain })
+  });
+}
+
+export async function simulateRiskImprovement(
+  currentScore: number,
+  findings: Finding[],
+  selectedFindingKeys: string[]
+): Promise<RiskSimulationResponse> {
+  if (!authToken()) {
+    return demoSimulation(currentScore, findings, selectedFindingKeys);
+  }
+  return request<RiskSimulationResponse>("/risk/simulate", {
+    method: "POST",
+    body: JSON.stringify({
+      current_score: currentScore,
+      findings,
+      selected_finding_keys: selectedFindingKeys
+    })
   });
 }
 
@@ -104,4 +122,54 @@ function demoScan(domain: string): ScanResponse {
     ],
     recommendations: demoDashboard.recommendations
   };
+}
+
+function demoSimulation(
+  currentScore: number,
+  findings: Finding[],
+  selectedFindingKeys: string[]
+): RiskSimulationResponse {
+  const impactByKey: Record<string, number> = {
+    dmarc: 10,
+    ssl_certificate: 7,
+    open_ports: 5,
+    content_security_policy: 4
+  };
+  const improvement = selectedFindingKeys.reduce((total, key) => total + (impactByKey[key] ?? 3), 0);
+  const predictedScore = Math.min(100, currentScore + improvement);
+  const topFixes = findings
+    .filter((finding) => finding.status !== "pass")
+    .map((finding) => ({
+      finding_key: finding.key,
+      title: demoFixLabel(finding.key),
+      category: finding.category,
+      severity: finding.severity,
+      score_impact: impactByKey[finding.key] ?? 3,
+      risk_reduction: impactByKey[finding.key] ?? 3
+    }))
+    .sort((a, b) => b.score_impact - a.score_impact);
+
+  return {
+    current_score: currentScore,
+    predicted_score: predictedScore,
+    improvement: predictedScore - currentScore,
+    improvement_percentage: Number((((predictedScore - currentScore) / currentScore) * 100).toFixed(1)),
+    estimated_risk_reduction: predictedScore - currentScore,
+    selected_finding_keys: selectedFindingKeys,
+    top_fixes: topFixes,
+    comparison: [
+      { label: "Current", score: currentScore },
+      { label: "Predicted", score: predictedScore }
+    ]
+  };
+}
+
+function demoFixLabel(key: string) {
+  const labels: Record<string, string> = {
+    dmarc: "Enable DMARC enforcement",
+    ssl_certificate: "Renew SSL certificate",
+    open_ports: "Close unnecessary public ports",
+    content_security_policy: "Add Content-Security-Policy"
+  };
+  return labels[key] ?? `Fix ${key.replaceAll("_", " ")}`;
 }

@@ -31,3 +31,23 @@ export type DashboardResponse = {
   active_alerts: Array<{ severity: Severity; title: string; asset: string; created_at: string }>;
   recommendations: Recommendation[];
 };
+
+export type RiskSimulationFixImpact = {
+  finding_key: string;
+  title: string;
+  category: string;
+  severity: Severity;
+  score_impact: number;
+  risk_reduction: number;
+};
+
+export type RiskSimulationResponse = {
+  current_score: number;
+  predicted_score: number;
+  improvement: number;
+  improvement_percentage: number;
+  estimated_risk_reduction: number;
+  selected_finding_keys: string[];
+  top_fixes: RiskSimulationFixImpact[];
+  comparison: Array<{ label: string; score: number }>;
+};

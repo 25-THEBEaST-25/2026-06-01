@@ -4,9 +4,18 @@ from jose import JWTError, jwt
 
 from app.core.config import settings
 from app.core.security import create_access_token, hash_password, verify_password
-from app.schemas.security import DashboardResponse, DomainScanRequest, LoginRequest, ScanResponse, TokenResponse
+from app.schemas.security import (
+    DashboardResponse,
+    DomainScanRequest,
+    LoginRequest,
+    RiskSimulationRequest,
+    RiskSimulationResponse,
+    ScanResponse,
+    TokenResponse,
+)
 from app.services.orchestrator import ScanOrchestrator
 from app.services.reporting import ReportService
+from app.services.risk_simulator import RiskImprovementSimulator
 
 api_router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
@@ -22,6 +31,7 @@ DEMO_USERS = {
 
 orchestrator = ScanOrchestrator()
 report_service = ReportService()
+risk_simulator = RiskImprovementSimulator()
 
 
 def require_role(*roles: str):
@@ -86,6 +96,18 @@ async def scan_domain(
     _: dict = Depends(require_role("admin", "analyst")),
 ) -> ScanResponse:
     return await orchestrator.scan_domain(payload)
+
+
+@api_router.post("/risk/simulate", response_model=RiskSimulationResponse, tags=["risk"])
+async def simulate_risk_improvement(
+    payload: RiskSimulationRequest,
+    _: dict = Depends(require_role("admin", "analyst", "viewer")),
+) -> RiskSimulationResponse:
+    return risk_simulator.simulate(
+        findings=payload.findings,
+        selected_finding_keys=payload.selected_finding_keys,
+        current_score=payload.current_score,
+    )
 
 
 @api_router.post("/reports/domain", tags=["reports"])

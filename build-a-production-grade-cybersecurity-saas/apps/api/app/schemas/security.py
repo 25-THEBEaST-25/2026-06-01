@@ -53,3 +53,29 @@ class DashboardResponse(BaseModel):
     trend: list[dict]
     active_alerts: list[dict]
     recommendations: list[Recommendation]
+
+
+class RiskSimulationRequest(BaseModel):
+    current_score: float | None = Field(default=None, ge=0, le=100)
+    findings: list[Finding]
+    selected_finding_keys: list[str] = Field(default_factory=list)
+
+
+class RiskSimulationFixImpact(BaseModel):
+    finding_key: str
+    title: str
+    category: str
+    severity: Literal["critical", "high", "medium", "low", "info"]
+    score_impact: float
+    risk_reduction: float
+
+
+class RiskSimulationResponse(BaseModel):
+    current_score: float
+    predicted_score: float
+    improvement: float
+    improvement_percentage: float
+    estimated_risk_reduction: float
+    selected_finding_keys: list[str]
+    top_fixes: list[RiskSimulationFixImpact]
+    comparison: list[dict]
