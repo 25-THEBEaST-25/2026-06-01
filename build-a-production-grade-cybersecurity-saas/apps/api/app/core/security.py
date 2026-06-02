@@ -23,3 +23,9 @@ def create_access_token(subject: str, role: str, expires_delta: timedelta | None
     )
     payload: dict[str, Any] = {"sub": subject, "role": role, "exp": expires}
     return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+
+
+def create_refresh_token(subject: str, role: str) -> str:
+    expires = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    payload: dict[str, Any] = {"sub": subject, "role": role, "type": "refresh", "exp": expires}
+    return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)

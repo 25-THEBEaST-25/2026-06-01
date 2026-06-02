@@ -1,8 +1,12 @@
 import type {
   BusinessImpactResponse,
+  AlertRead,
   DashboardResponse,
   Finding,
+  ReportMetadata,
   RiskSimulationResponse,
+  ScanJob,
+  ScanSchedule,
   ScanResponse
 } from "@/lib/types";
 
@@ -53,6 +57,23 @@ export async function scanDomain(domain: string): Promise<ScanResponse> {
   });
 }
 
+export async function enqueueDomainScan(domain: string): Promise<ScanJob> {
+  if (!authToken()) {
+    return demoScanJob(domain, "completed");
+  }
+  return request<ScanJob>("/scans/domain/jobs", {
+    method: "POST",
+    body: JSON.stringify({ domain })
+  });
+}
+
+export async function getScanJob(jobId: string): Promise<ScanJob> {
+  if (!authToken()) {
+    return demoScanJob("example.com", "completed");
+  }
+  return request<ScanJob>(`/scans/jobs/${jobId}`);
+}
+
 export async function simulateRiskImprovement(
   currentScore: number,
   findings: Finding[],
@@ -82,6 +103,49 @@ export async function estimateBusinessImpact(
     method: "POST",
     body: JSON.stringify({ domain, findings })
   });
+}
+
+export async function getAlerts(): Promise<AlertRead[]> {
+  if (!authToken()) {
+    return [
+      {
+        id: "alt_dmarc",
+        asset: "example.com",
+        severity: "high",
+        title: "DMARC policy missing enforcement",
+        description: "DMARC exists but does not enforce quarantine or reject.",
+        status: "open",
+        resolution_note: null,
+        created_at: new Date().toISOString(),
+        updated_at: null
+      }
+    ];
+  }
+  return request<AlertRead[]>("/alerts");
+}
+
+export async function createSchedule(domain: string, cadence: ScanSchedule["cadence"]): Promise<ScanSchedule> {
+  if (!authToken()) {
+    return {
+      id: "sch_demo",
+      organization_id: "demo-org",
+      domain,
+      cadence,
+      enabled: true,
+      next_run_at: new Date(Date.now() + 86400000).toISOString()
+    };
+  }
+  return request<ScanSchedule>("/schedules", {
+    method: "POST",
+    body: JSON.stringify({ domain, cadence })
+  });
+}
+
+export async function getReports(): Promise<ReportMetadata[]> {
+  if (!authToken()) {
+    return [];
+  }
+  return request<ReportMetadata[]>("/reports");
 }
 
 export async function login(email: string, password: string): Promise<string> {
@@ -140,6 +204,20 @@ function demoScan(domain: string): ScanResponse {
       { category: "asset_discovery", key: "open_ports", status: "warn", severity: "medium", message: "Public HTTP and HTTPS services detected.", evidence: { ports: [80, 443] } }
     ],
     recommendations: demoDashboard.recommendations
+  };
+}
+
+function demoScanJob(domain: string, status: ScanJob["status"]): ScanJob {
+  return {
+    id: "job_demo",
+    organization_id: "demo-org",
+    domain,
+    status,
+    progress: status === "completed" ? 100 : 20,
+    result: status === "completed" ? demoScan(domain) : null,
+    error: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
 }
 

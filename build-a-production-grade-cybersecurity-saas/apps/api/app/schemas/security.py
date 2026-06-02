@@ -6,6 +6,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 class TokenResponse(BaseModel):
     access_token: str
+    refresh_token: str | None = None
     token_type: str = "bearer"
 
 
@@ -99,3 +100,61 @@ class BusinessImpactEstimate(BaseModel):
 class BusinessImpactResponse(BaseModel):
     domain: str | None = None
     estimates: list[BusinessImpactEstimate]
+
+
+class ScanJobRead(BaseModel):
+    id: str
+    organization_id: str
+    domain: str
+    status: Literal["queued", "running", "completed", "failed"]
+    progress: int = Field(ge=0, le=100)
+    result: ScanResponse | None = None
+    error: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class AlertRead(BaseModel):
+    id: str
+    asset: str
+    severity: Literal["critical", "high", "medium", "low", "info"]
+    title: str
+    description: str
+    status: Literal["open", "acknowledged", "resolved", "suppressed", "false_positive"]
+    resolution_note: str | None = None
+    created_at: datetime
+    updated_at: datetime | None = None
+
+
+class AlertUpdateRequest(BaseModel):
+    status: Literal["open", "acknowledged", "resolved", "suppressed", "false_positive"]
+    resolution_note: str | None = None
+
+
+class ScanScheduleCreate(BaseModel):
+    domain: str = Field(pattern=r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+    cadence: Literal["daily", "weekly", "monthly"] = "daily"
+
+
+class ScanScheduleRead(BaseModel):
+    id: str
+    organization_id: str
+    domain: str
+    cadence: Literal["daily", "weekly", "monthly"]
+    enabled: bool
+    next_run_at: datetime
+
+
+class ReportMetadata(BaseModel):
+    id: str
+    domain: str
+    report_type: str
+    storage_uri: str
+    created_at: datetime
+
+
+class MetricsResponse(BaseModel):
+    uptime: str
+    queued_jobs: int
+    active_alerts: int
+    cache: dict

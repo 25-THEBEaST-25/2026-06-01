@@ -6,18 +6,31 @@ import { Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { scanDomain } from "@/lib/api";
-import type { ScanResponse } from "@/lib/types";
+import { enqueueDomainScan, getScanJob, scanDomain } from "@/lib/api";
+import type { ScanJob, ScanResponse } from "@/lib/types";
 
 export default function DomainsPage() {
   const [domain, setDomain] = useState("example.com");
   const [scan, setScan] = useState<ScanResponse | null>(null);
+  const [job, setJob] = useState<ScanJob | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function runScan() {
     setLoading(true);
     try {
-      setScan(await scanDomain(domain));
+      const queued = await enqueueDomainScan(domain);
+      setJob(queued);
+      if (queued.status === "completed" && queued.result) {
+        setScan(queued.result);
+        return;
+      }
+      const latest = await getScanJob(queued.id);
+      setJob(latest);
+      if (latest.result) {
+        setScan(latest.result);
+      } else {
+        setScan(await scanDomain(domain));
+      }
     } finally {
       setLoading(false);
     }
@@ -61,6 +74,25 @@ export default function DomainsPage() {
                 <p className="mt-2 text-sm text-muted-foreground">{finding.message}</p>
               </div>
             ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {job ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Scan Job</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="font-medium">{job.id}</p>
+                <p className="text-sm text-muted-foreground">{job.domain}</p>
+              </div>
+              <Badge tone={job.status === "failed" ? "fail" : job.status === "completed" ? "pass" : "warn"}>
+                {job.status} · {job.progress}%
+              </Badge>
+            </div>
           </CardContent>
         </Card>
       ) : null}

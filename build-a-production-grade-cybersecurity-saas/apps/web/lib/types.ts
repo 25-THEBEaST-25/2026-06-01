@@ -66,3 +66,46 @@ export type BusinessImpactResponse = {
   domain: string | null;
   estimates: BusinessImpactEstimate[];
 };
+
+export type ScanJob = {
+  id: string;
+  organization_id: string;
+  domain: string;
+  status: "queued" | "running" | "completed" | "failed";
+  progress: number;
+  result: ScanResponse | null;
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AlertStatus = "open" | "acknowledged" | "resolved" | "suppressed" | "false_positive";
+
+export type AlertRead = {
+  id: string;
+  asset: string;
+  severity: Severity;
+  title: string;
+  description: string;
+  status: AlertStatus;
+  resolution_note: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
+
+export type ScanSchedule = {
+  id: string;
+  organization_id: string;
+  domain: string;
+  cadence: "daily" | "weekly" | "monthly";
+  enabled: boolean;
+  next_run_at: string;
+};
+
+export type ReportMetadata = {
+  id: string;
+  domain: string;
+  report_type: string;
+  storage_uri: string;
+  created_at: string;
+};

@@ -44,6 +44,23 @@ cyber-risk-radar/
 - Reports: downloadable PDF with summary, findings, risk score, and recommendations.
 - Authentication: JWT login, role guard dependencies, admin-only route.
 
+## Production Efficiency Updates
+
+- Background scan jobs: `POST /api/v1/scans/domain/jobs` enqueues scans and `GET /api/v1/scans/jobs/{id}` returns job status.
+- PostgreSQL persistence layer: ORM entities and repositories cover tenants, assets, scans, findings, alerts, reports, jobs, schedules, and audit logs.
+- Alembic migrations: initial production schema lives under `apps/api/alembic`.
+- Multi-tenant scoping: APIs accept `X-Organization-Id` and enforce organization-aware scan limits.
+- Scheduled monitoring: schedule APIs support daily, weekly, and monthly scan cadence.
+- Scan result caching: in-memory TTL cache shields repeated scanner calls; Redis is available for production adapters.
+- Queue and rate limits: Docker includes Redis, worker, scheduler, and per-organization scan throttling.
+- Alert lifecycle: alerts support open, acknowledged, resolved, suppressed, and false positive states.
+- Auth hardening: access and refresh tokens are issued, MFA-ready user fields exist, and audit events track sensitive actions.
+- Report persistence: report metadata is stored through a report store abstraction.
+- Observability: request IDs, response timing, metrics, structured logging hooks, and audit logs are included.
+- Security hardening: API/frontend security headers, CORS controls, secret validation, and non-root Docker users are configured.
+- Scanner architecture: scanner registry normalizes scanners behind a common interface for future integrations.
+- Frontend performance: loading skeletons, async scan job UX, typed API clients, and security middleware are included.
+
 ## Local Development
 
 ```bash
@@ -54,6 +71,7 @@ docker compose up --build
 Web app: http://localhost:3000  
 API docs: http://localhost:8000/docs  
 API health: http://localhost:8000/api/v1/health
+Metrics: http://localhost:8000/api/v1/metrics
 
 Demo login:
 
@@ -90,5 +108,5 @@ npm run test
 - Move demo users into PostgreSQL-backed user management.
 - Add scheduled workers for periodic scans and alert creation.
 - Connect breach monitoring to approved commercial or internal feeds.
-- Add migrations with Alembic before the first production release.
-- Store generated reports in object storage when report history is required.
+- Replace in-memory dev adapters with Redis/PostgreSQL-backed implementations where marked.
+- Store generated report binaries in object storage while keeping metadata in PostgreSQL.
